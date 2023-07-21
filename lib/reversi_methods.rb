@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'debug'
 require_relative './position'
 
 WHITE_STONE = 1
@@ -26,7 +25,7 @@ DIRECTIONS = [
 def output(board)
   puts "  #{ROW.join(' ')}"
   board.each.with_index do |row, i|
-    print COL[i].to_s
+    print COL[i]
     row.each do |cell|
       case cell
       when WHITE_STONE then print ' ○'
@@ -46,14 +45,14 @@ def copy_board(to_board, from_board)
   end
 end
 
-def put_stone!(board, cellstr, stone_color, execute = true) # rubocop:disable Style/OptionalBooleanParameter
+def put_stone!(board, cellstr, stone_color, execute = true) # rubocop:disable Style/OptionalBooleanParameters
   pos = Position.new(cellstr:)
   raise '無効なポジションです' if pos.invalid?
   raise 'すでに石が置かれています' unless pos.stone_color(board) == BLANK_CELL
 
   # コピーした盤面にて石の配置を試みて、成功すれば反映する
   copied_board = Marshal.load(Marshal.dump(board))
-  copied_board[pos.row][pos.col] = stone_color
+  copied_board[pos.col][pos.row] = stone_color
 
   turn_succeed = false
   DIRECTIONS.each do |direction|
@@ -70,7 +69,7 @@ end
 def turn!(board, target_pos, attack_stone_color, direction)
   return false if target_pos.out_of_board?
   return false if target_pos.stone_color(board) == attack_stone_color
-
+  return false if target_pos.stone_color(board) == BLANK_CELL
   next_pos = target_pos.next_position(direction)
   if (next_pos.stone_color(board) == attack_stone_color) || turn!(board, next_pos, attack_stone_color, direction)
     board[target_pos.col][target_pos.row] = attack_stone_color
@@ -93,6 +92,7 @@ def placeable?(board, attack_stone_color)
       return true if put_stone!(board, position.to_cellstr, attack_stone_color, false)
     end
   end
+  false
 end
 
 def count_stone(board, stone_color)
